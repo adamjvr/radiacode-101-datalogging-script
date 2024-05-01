@@ -14,7 +14,8 @@ def sample_radiation_data(num_samples, sample_interval, csv_filename):
         writer.writeheader()
 
         # Initialize the Radiacode 101 device
-        radiacode_device = radiacode.Radiacode101()
+        # radiacode_device = Radiacode()
+        radiacode_device = radiacode(serial_number="RC-101-003059")
 
         # Loop to sample radiation data for the specified number of samples
         for _ in range(num_samples):

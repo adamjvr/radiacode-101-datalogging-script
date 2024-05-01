@@ -1,33 +1,48 @@
 import argparse
 import csv  # Importing the CSV module for handling CSV files
 import time  # Importing the time module for timestamping
-from radiacode import RadiaCode  # Importing the RadiaCode class from the radiacode library
+from radiacode import RadiaCode, DoseRateDB, RareData, RealTimeData, RawData, Event # Importing the RadiaCode class from the radiacode library
 
+
+import csv
+import time
+from datetime import datetime
 
 # Function to sample radiation data and record it in a CSV file
-def sample_radiation_data(num_samples, sample_interval, csv_filename,radiacode):
+def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode):
     # Open the CSV file in write mode with newline='' to ensure proper line endings
     with open(csv_filename, 'w', newline='') as csvfile:
         # Define the field names for the CSV file
-        fieldnames = ['timestamp', 'radiation_level']
+        fieldnames = ['timestamp', 'radiation_type', 'data']
         # Create a CSV writer object
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         # Write the header row to the CSV file
         writer.writeheader()
 
-        # Initialize the Radiacode 101 device
-        #radiacode_device = radiacode(serial_number="RC-101-003059")
-
         # Loop to sample radiation data for the specified number of samples
         for _ in range(num_samples):
-            # Sample the radiation level from the Radiacode 101 device
-            radiation_level = radiacode_device.sample()
+            # Sample the radiation data from the Radiacode device
+            databuf = radiacode.data_buf()
             # Get the current timestamp
-            timestamp = time.strftime('%Y-%m-%d %H:%M:%S')
-            # Write the timestamp and radiation level to the CSV file
-            writer.writerow({'timestamp': timestamp, 'radiation_level': radiation_level})
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+            # Write each type of radiation data to the CSV file
+            for data in databuf:
+                if isinstance(data, DoseRateDB):
+                    radiation_type = 'DoseRateDB'
+                elif isinstance(data, RareData):
+                    radiation_type = 'RareData'
+                elif isinstance(data, RealTimeData):
+                    radiation_type = 'RealTimeData'
+                elif isinstance(data, RawData):
+                    radiation_type = 'RawData'
+                elif isinstance(data, Event):
+                    radiation_type = 'Event'
+                else:
+                    radiation_type = 'Unknown'
+                writer.writerow({'timestamp': timestamp, 'radiation_type': radiation_type, 'data': str(data)})
             # Wait for the specified interval between samples
             time.sleep(sample_interval)
+
 
 # Main function
 if __name__ == "__main__":

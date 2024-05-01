@@ -1,19 +1,28 @@
 import argparse
 import csv  # Importing the CSV module for handling CSV files
 import time  # Importing the time module for timestamping
-from radiacode import RadiaCode, DoseRateDB, RareData, RealTimeData, RawData, Event # Importing the RadiaCode class from the radiacode library
-
-
-import csv
-import time
 from datetime import datetime
+from radiacode import RadiaCode, DoseRateDB, RareData, RealTimeData, RawData, Event # Importing the RadiaCode class from the radiacode library
 
 # Function to sample radiation data and record it in a CSV file
 def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode):
+    """
+    Samples radiation data from the Radiacode device and records it in a CSV file.
+
+    Args:
+        num_samples (int): The number of samples to collect.
+        sample_interval (float): The time interval between each sample in seconds.
+        csv_filename (str): The name of the CSV file to write the data to.
+        radiacode (RadiaCode): The Radiacode device object.
+
+    Returns:
+        None
+    """
+    # Define field names for CSV columns
+    fieldnames = ['timestamp', 'RealTimeData', 'DoseRateDB', 'RareData', 'RawData', 'Event']
+
     # Open the CSV file in write mode with newline='' to ensure proper line endings
     with open(csv_filename, 'w', newline='') as csvfile:
-        # Define the field names for the CSV file
-        fieldnames = ['timestamp', 'radiation_type', 'data']
         # Create a CSV writer object
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         # Write the header row to the CSV file
@@ -23,23 +32,23 @@ def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode)
         for _ in range(num_samples):
             # Sample the radiation data from the Radiacode device
             databuf = radiacode.data_buf()
-            # Get the current timestamp
+            # Get the current timestamp with microseconds precision
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-            # Write each type of radiation data to the CSV file
-            for data in databuf:
-                if isinstance(data, DoseRateDB):
-                    radiation_type = 'DoseRateDB'
-                elif isinstance(data, RareData):
-                    radiation_type = 'RareData'
-                elif isinstance(data, RealTimeData):
-                    radiation_type = 'RealTimeData'
-                elif isinstance(data, RawData):
-                    radiation_type = 'RawData'
-                elif isinstance(data, Event):
-                    radiation_type = 'Event'
-                else:
-                    radiation_type = 'Unknown'
-                writer.writerow({'timestamp': timestamp, 'radiation_type': radiation_type, 'data': str(data)})
+            # Create a dictionary to store the data for the current sample
+            sample_data = {'timestamp': timestamp}
+
+            # Extract RealTimeData and add it to the sample_data dictionary
+            real_time_data = next((d for d in databuf if isinstance(d, RealTimeData)), None)
+            sample_data['RealTimeData'] = str(real_time_data) if real_time_data else ''  # Convert data to string if not None
+
+            # Extract data of other types and add them to the sample_data dictionary
+            for data_type in fieldnames[2:]:
+                data = next((d for d in databuf if isinstance(d, globals()[data_type])), None)
+                sample_data[data_type] = str(data) if data else ''  # Convert data to string if not None
+
+            # Write the sample data to the CSV file
+            writer.writerow(sample_data)
+
             # Wait for the specified interval between samples
             time.sleep(sample_interval)
 

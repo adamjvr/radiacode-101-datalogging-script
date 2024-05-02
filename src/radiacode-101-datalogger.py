@@ -2,6 +2,7 @@ import argparse
 import csv  # Importing the CSV module for handling CSV files
 import time  # Importing the time module for timestamping
 from datetime import datetime
+from tqdm import tqdm  # Import tqdm for the progress bar
 from radiacode import RadiaCode, DoseRateDB, RareData, RealTimeData, RawData, Event # Importing the RadiaCode class from the radiacode library
 
 # Function to sample radiation data and record it in a CSV file
@@ -28,6 +29,9 @@ def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode)
         # Write the header row to the CSV file
         writer.writeheader()
 
+        # Initialize tqdm for progress bar
+        progress_bar = tqdm(total=num_samples, desc='Sampling Radiation Data', unit=' sample')
+
         # Loop to sample radiation data for the specified number of samples
         for _ in range(num_samples):
             # Sample the radiation data from the Radiacode device
@@ -49,8 +53,14 @@ def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode)
             # Write the sample data to the CSV file
             writer.writerow(sample_data)
 
+            # Update progress bar
+            progress_bar.update(1)
+
             # Wait for the specified interval between samples
             time.sleep(sample_interval)
+
+        # Close tqdm progress bar after completion
+        progress_bar.close()
 
 
 # Main function

@@ -1,12 +1,12 @@
 import argparse
 import csv  # Importing the CSV module for handling CSV files
 import time  # Importing the time module for timestamping
-from datetime import datetime
+from datetime import datetime # Importing the datetime module for getting current time
 from tqdm import tqdm  # Import tqdm for the progress bar
 from radiacode import RadiaCode, DoseRateDB, RareData, RealTimeData, RawData, Event # Importing the RadiaCode class from the radiacode library
 
 # Function to sample radiation data and record it in a CSV file
-def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode):
+def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode, verbose=False):
     """
     Samples radiation data from the Radiacode device and records it in a CSV file.
 
@@ -15,6 +15,7 @@ def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode)
         sample_interval (float): The time interval between each sample in seconds.
         csv_filename (str): The name of the CSV file to write the data to.
         radiacode (RadiaCode): The Radiacode device object.
+        verbose (bool, optional): Whether to print each data sample as it's read in. Defaults to False.
 
     Returns:
         None
@@ -33,7 +34,7 @@ def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode)
         progress_bar = tqdm(total=num_samples, desc='Sampling Radiation Data', unit=' sample')
 
         # Loop to sample radiation data for the specified number of samples
-        for _ in range(num_samples):
+        for sample_count in range(num_samples):
             # Sample the radiation data from the Radiacode device
             databuf = radiacode.data_buf()
             # Get the current timestamp with microseconds precision
@@ -53,6 +54,10 @@ def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode)
             # Write the sample data to the CSV file
             writer.writerow(sample_data)
 
+            # Print each data sample if verbose mode is enabled
+            if verbose:
+                print(f"Sample {sample_count + 1}: {sample_data}")
+
             # Update progress bar
             progress_bar.update(1)
 
@@ -62,12 +67,14 @@ def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode)
         # Close tqdm progress bar after completion
         progress_bar.close()
 
-
 # Main function
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--bluetooth-mac', type=str, required=False, help='bluetooth MAC address of radiascan device')
+    parser.add_argument('--verbose', action='store_true', help='enable verbose mode')
     args = parser.parse_args()
+
+    verbose_mode = args.verbose
 
     if args.bluetooth_mac:
         print('will use Bluetooth connection')
@@ -90,7 +97,6 @@ if __name__ == "__main__":
 
     print('### DataBuf:')
 
-
     # Prompt the user to input the number of samples to take
     num_samples = int(input("Enter the number of samples to take: "))
     # Prompt the user to input the time interval between samples (in seconds)
@@ -99,4 +105,4 @@ if __name__ == "__main__":
     csv_filename = input("Enter the name of the CSV file to save data to: ")
 
     # Call the function to sample radiation data and record it in the CSV file
-    sample_radiation_data(num_samples, sample_interval, csv_filename,radiacode_device)
+    sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode_device, verbose=verbose_mode)

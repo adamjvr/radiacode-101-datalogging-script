@@ -60,7 +60,7 @@ def sample_radiation_data(num_samples, sample_interval, csv_filename, radiacode,
 
             # Update progress bar
             progress_bar.update(1)
-
+            # radiacode_device.spectrum_reset(); # reset spectrum before next sample cycle 
             # Wait for the specified interval between samples
             time.sleep(sample_interval)
 
